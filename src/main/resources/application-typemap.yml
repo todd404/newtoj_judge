@@ -1,0 +1,12 @@
+type-maps:
+  cpp-type-map:
+    int: int
+    "[int[]]": vector<int>
+
+  argument-function-map:
+    int: stringToInt
+    "[int[]]": stringToIntArray
+
+  return-function-map:
+    int: intToString
+    "[int[]]": arrayToString

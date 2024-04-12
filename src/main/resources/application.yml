@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: toj_judge
+  profiles:
+    include: typemap, language-support
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: thinkpadx201
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+server:
+  port: 9000

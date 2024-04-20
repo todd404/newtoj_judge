@@ -1,10 +1,11 @@
 package com.toddwu.toj_judge.judge;
 
+import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toddwu.toj_judge.exception.RunningException;
-import com.toddwu.toj_judge.pojo.JudgeConfig;
-import com.toddwu.toj_judge.pojo.JudgeReport;
+import com.toddwu.toj_judge.pojo.judge.JudgeConfig;
+import com.toddwu.toj_judge.pojo.judge.JudgeReport;
 import com.toddwu.toj_judge.utils.MyUtils;
 import com.toddwu.toj_judge.utils.RedisCache;
 import lombok.Data;
@@ -15,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -47,17 +49,16 @@ public abstract class Judge {
     }
 
     void downloadFiles() throws IOException {
-        String downloadBasePath = "http://192.168.227.1/file";
-        String templateFileSrc = downloadBasePath + "/"
+        String basePath = "/mnt/d/toj_files";
+        String templateFileSrc = basePath + "/"
                 + judgeConfig.getLanguage() + "/template/"
                 + judgeConfig.getProblemId() + "." + judgeConfig.getLanguage();
-        String testFileSrc = downloadBasePath + "/test/" + judgeConfig.getProblemId() + ".txt";
-        String answerFileSrc = downloadBasePath + "/answer/" + judgeConfig.getProblemId() + ".txt";
+        String testFileSrc = basePath + "/test/" + judgeConfig.getProblemId() + ".txt";
+        String answerFileSrc = basePath + "/answer/" + judgeConfig.getProblemId() + ".txt";
 
-
-        MyUtils.downloadFile(templateFileSrc, templateFile.getPath());
-        MyUtils.downloadFile(testFileSrc, testFile.getPath());
-        MyUtils.downloadFile(answerFileSrc, answerFile.getPath());
+        FileUtil.copy(Paths.get(templateFileSrc), templateFile.toPath());
+        FileUtil.copy(Paths.get(testFileSrc), testFile.toPath());
+        FileUtil.copy(Paths.get(answerFileSrc), answerFile.toPath());
     }
 
     void buildRealCodeFile() throws IOException {
@@ -71,23 +72,23 @@ public abstract class Judge {
         fileWriter.close();
     }
 
-    JudgeReport getJudgeReport() throws JsonProcessingException {
+    JudgeReport pullJudgeReport() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         String msg = redisCache.getCacheObject("judge:" + judgeConfig.getUuid());
 
         return objectMapper.readValue(msg, JudgeReport.class);
     }
 
-    void setJudgeReport(JudgeReport judgeReport) throws JsonProcessingException {
+    void putJudgeReport(JudgeReport judgeReport) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
-        redisCache.setCacheObject("judge:" + judgeConfig.getUuid(), objectMapper.writeValueAsString(judgeReport));
+        redisCache.setCacheObject("judge:" + judgeConfig.getUuid(), objectMapper.writeValueAsString(judgeReport), 10, TimeUnit.MINUTES);
     }
 
     void reportError(Integer code, String msg) throws JsonProcessingException {
-        JudgeReport judgeReport = getJudgeReport();
+        JudgeReport judgeReport = pullJudgeReport();
         judgeReport.setStatusCode(code);
         judgeReport.setMsg(msg);
-        setJudgeReport(judgeReport);
+        putJudgeReport(judgeReport);
     }
 
     abstract public void judgeCode();
@@ -97,17 +98,15 @@ public abstract class Judge {
 
         Process process = processBuilder.start();
 
-        var waitResult = process.waitFor(Math.round(judgeConfig.getProblemConfig().getTimeLimit()), TimeUnit.MILLISECONDS);
+        var waitResult = process.waitFor(Math.round(judgeConfig.getProblemConfig().getTimeLimit()), TimeUnit.SECONDS);
         if(!waitResult){
             //超时
             throw new RunningException("运行超时！");
         }
 
-        //TODO: 是否要加个返回值是否为0的判断？是否与下面的错误检查重复？
-
         //通过检查err流检查运行是否有错误
         //注意：time指令的输出也在错误流里，在最后一行，如果错误流一行也没有说明运行异常
-        String errorLine ;
+        String errorLine;
         ArrayList<String> errorLineList = new ArrayList<>();
         while ((errorLine = process.errorReader().readLine()) != null){
             errorLineList.add(errorLine);
@@ -135,10 +134,10 @@ public abstract class Judge {
                 throw new RunningException("运行超过内存限制！");
             }
 
-            JudgeReport judgeReport = getJudgeReport();
+            JudgeReport judgeReport = pullJudgeReport();
             judgeReport.setTimeUsed(String.valueOf(executeTime));
             judgeReport.setMemoryUsed(memory.toString());
-            setJudgeReport(judgeReport);
+            putJudgeReport(judgeReport);
         }else{
             throw new Exception("未知错误");
         }
@@ -148,7 +147,6 @@ public abstract class Judge {
         Scanner answerScanner = new Scanner(answerFile);
         String resultLine;
         Integer BasicCasesCorrectCount = 0;
-        Boolean basicCasesPassed = false;
         List<Boolean> specialCasesPassedList = new ArrayList<>();
         int basicCasesCount = judgeConfig.getProblemConfig().getScoreConfig().getBasicCasesCount();
         while ((resultLine = inputReader.readLine()) != null){
@@ -166,17 +164,15 @@ public abstract class Judge {
                     }
                 }else{
                     if(BasicCasesCorrectCount < basicCasesCount){
-                        basicCasesPassed = false;
                         break;
                     }else{
-                        basicCasesPassed = true;
                         specialCasesPassedList.add(false);
                     }
                 }
             }
         }
 
-        JudgeReport judgeReport = getJudgeReport();
+        JudgeReport judgeReport = pullJudgeReport();
         if(answerScanner.hasNext()){
             judgeReport.setStatusCode(201);
         }else{
@@ -184,9 +180,9 @@ public abstract class Judge {
         }
 
         judgeReport.setBasicCasesCorrectLine(BasicCasesCorrectCount);
-        judgeReport.setBasicCasesPassed(basicCasesPassed);
+        judgeReport.setBasicCasesPassed(!(BasicCasesCorrectCount < basicCasesCount));
         judgeReport.setSpecialCasesPassedList(specialCasesPassedList);
         judgeReport.setJudgeConfig(judgeConfig);
-        setJudgeReport(judgeReport);
+        putJudgeReport(judgeReport);
     }
 }

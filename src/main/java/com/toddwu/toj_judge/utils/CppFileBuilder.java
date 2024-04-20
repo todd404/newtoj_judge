@@ -35,7 +35,7 @@ public class CppFileBuilder {
         StringBuilder argFunctionContent = new StringBuilder();
         List<String> functionNames = new ArrayList<>();
 
-        for(String arg : problemConfig.getArgumentTypes()){
+        for(String arg : problemConfig.getArgumentTypeList()){
             Map<String, String> argumentFunctionMap = typeMap.getArgumentFunctionMap();
 
             String functionName = argumentFunctionMap.get(arg);
@@ -56,7 +56,7 @@ public class CppFileBuilder {
         fileContent.append(returnFunctionContent);
 
         //TODO:改成代码占位符
-        fileContent.append(code);
+        fileContent.append("\n<code></code>\n");
 
         //cpp main函数
         StringBuilder cppSolutionFunction = new StringBuilder();
@@ -68,7 +68,7 @@ public class CppFileBuilder {
         cppSolutionFunction.append(")");
 
         String mainTemplate = readFileToString(basePath + "main.cpp");
-        String mainContent = mainTemplate.formatted(problemConfig.getArgumentTypes().size(),
+        String mainContent = mainTemplate.formatted(problemConfig.getArgumentTypeList().size(),
                 returnType,
                 cppSolutionFunction,
                 "%s(result)".formatted(returnFunctionName));

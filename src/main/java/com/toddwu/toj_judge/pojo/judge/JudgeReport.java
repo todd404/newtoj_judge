@@ -1,4 +1,4 @@
-package com.toddwu.toj_judge.pojo;
+package com.toddwu.toj_judge.pojo.judge;
 
 import lombok.Data;
 

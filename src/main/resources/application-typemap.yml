@@ -9,4 +9,4 @@ type-maps:
 
   return-function-map:
     int: intToString
-    "[int[]]": arrayToString
+    "[int[]]": intArrayToString

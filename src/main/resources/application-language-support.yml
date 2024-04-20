@@ -1,3 +1,4 @@
 language-support:
   cpp: true
+  cpp-run: true
   java: false

@@ -3,7 +3,7 @@ package com.toddwu.toj_judge.mq_listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toddwu.toj_judge.judge.CppJudge;
-import com.toddwu.toj_judge.pojo.JudgeConfig;
+import com.toddwu.toj_judge.pojo.judge.JudgeConfig;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

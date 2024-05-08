@@ -3,6 +3,7 @@ package com.toddwu.toj_judge.run;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toddwu.toj_judge.exception.RunningException;
+import com.toddwu.toj_judge.pojo.judge.JudgeReport;
 import com.toddwu.toj_judge.pojo.run.RunConfig;
 import com.toddwu.toj_judge.pojo.run.RunReport;
 import com.toddwu.toj_judge.utils.MyUtils;
@@ -36,7 +37,7 @@ public abstract class Run {
         templateFile = new File(runConfig.getUuid() + "/template." + runConfig.getLanguage());
         testFile = new File(runConfig.getUuid() + "/test.txt");
         answerFile = new File("/mnt/d/toj_files/run/" + runConfig.getUuid() + "/answer.txt");
-        codeFile = new File(runConfig.getUuid() + "/solution." + runConfig.getLanguage());
+        codeFile = new File(runConfig.getUuid() + "/Main." + runConfig.getLanguage());
 
         createUuidDir();
         copyFiles();
@@ -53,7 +54,7 @@ public abstract class Run {
     void copyFiles() throws IOException {
         String basePath = "/mnt/d/toj_files/run/" + runConfig.getUuid();
         String runTestCaseFile = basePath + "/test.txt";
-        String templateFilePath = basePath + "/template.cpp";
+        String templateFilePath = basePath + "/template." + runConfig.getLanguage();
 
         Files.copy(Path.of(runTestCaseFile), testFile.getAbsoluteFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(Path.of(templateFilePath), templateFile.getAbsoluteFile().toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -80,6 +81,13 @@ public abstract class Run {
     void putRunReport(RunReport runReport) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         redisCache.setCacheObject("run:" + runConfig.getUuid(), objectMapper.writeValueAsString(runReport), 10, TimeUnit.MINUTES);
+    }
+
+    void reportError(Integer code, String msg) throws JsonProcessingException {
+        RunReport judgeReport = pullRunReport();
+        judgeReport.setStatusCode(code);
+        judgeReport.setMsg(msg);
+        putRunReport(judgeReport);
     }
 
     void run(ProcessBuilder processBuilder) throws RunningException, IOException, InterruptedException {

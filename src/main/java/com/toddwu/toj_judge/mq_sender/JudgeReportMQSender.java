@@ -12,13 +12,7 @@ public class JudgeReportMQSender {
     @Resource
     private RabbitTemplate rabbitTemplate;
 
-    public void send(JudgeReport judgeReport){
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            String msg = objectMapper.writeValueAsString(judgeReport);
-            rabbitTemplate.convertAndSend("judgeReportQueue", msg);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public void send(String uuid){
+        rabbitTemplate.convertAndSend("judgeReportQueue", uuid);
     }
 }

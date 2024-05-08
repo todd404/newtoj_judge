@@ -8,8 +8,8 @@ public class JudgeConfig {
     String language;
     String problemId;
     String uuid;
-    String code;
     String type;
     String forUUID;
+    String code;
     ProblemConfig problemConfig;
 }

@@ -29,7 +29,7 @@ public class AsyncConfig implements AsyncConfigurer {
         // 允许空闲时间：超过核心线程之外的线程到达60秒后会被销毁
         executor.setKeepAliveSeconds(60);
         // 线程名称前缀
-        executor.setThreadNamePrefix("learn-Async-");
+        executor.setThreadNamePrefix("judge-Async-");
         // 初始化线程
         executor.initialize();
         return executor;

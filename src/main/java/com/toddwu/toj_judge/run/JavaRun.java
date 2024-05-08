@@ -15,12 +15,11 @@ import java.io.IOException;
 
 @Component
 @Scope("prototype")
-public class CppRun extends Run{
+public class JavaRun extends Run{
     File outputFile;
 
     @Override
     public void runForResult() throws JsonProcessingException {
-        outputFile = new File(runConfig.getUuid() + "/out.out");
         try {
             initFiles();
             complete();
@@ -43,9 +42,8 @@ public class CppRun extends Run{
         runReport.setMsg("编译中");
         putRunReport(runReport);
 
-        ProcessBuilder processBuilder = new ProcessBuilder("clang++",
-                codeFile.getAbsolutePath(),
-                "-o", uuidDir.getPath() + "/" + "out.out");
+        ProcessBuilder processBuilder = new ProcessBuilder("javac",
+                codeFile.getAbsolutePath());
         Process process = processBuilder.start();
 
         Integer returnCode = process.waitFor();
@@ -68,7 +66,9 @@ public class CppRun extends Run{
 
         File executableFile = new File(runConfig.getUuid() + "/out.out");
         Boolean setExecutableResult = executableFile.setExecutable(true);
-        ProcessBuilder processBuilder = new ProcessBuilder(executableFile.getAbsolutePath());
+        ProcessBuilder processBuilder = new ProcessBuilder("java", "Main");
+        processBuilder.directory(uuidDir);
+
         run(processBuilder);
     }
 }

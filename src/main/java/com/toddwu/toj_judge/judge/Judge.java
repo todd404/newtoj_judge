@@ -4,18 +4,21 @@ import cn.hutool.core.io.FileUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toddwu.toj_judge.exception.RunningException;
+import com.toddwu.toj_judge.mq_sender.JudgeReportMQSender;
 import com.toddwu.toj_judge.pojo.judge.JudgeConfig;
 import com.toddwu.toj_judge.pojo.judge.JudgeReport;
 import com.toddwu.toj_judge.utils.MyUtils;
 import com.toddwu.toj_judge.utils.RedisCache;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.CopyOption;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,9 +27,13 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Data
+@Scope("prototype")
 public abstract class Judge {
     @Autowired
     RedisCache redisCache;
+
+    @Autowired
+    JudgeReportMQSender judgeReportMQSender;
 
     JudgeConfig judgeConfig;
 
@@ -36,7 +43,7 @@ public abstract class Judge {
         templateFile = new File(judgeConfig.getUuid() + "/template." + judgeConfig.getLanguage());
         testFile = new File(judgeConfig.getUuid() + "/test.txt");
         answerFile = new File(judgeConfig.getUuid() + "/answer.txt");
-        codeFile = new File(judgeConfig.getUuid() + "/solution." + judgeConfig.getLanguage());
+        codeFile = new File(judgeConfig.getUuid() + "/Main." + judgeConfig.getLanguage());
 
         createUuidDir();
         downloadFiles();

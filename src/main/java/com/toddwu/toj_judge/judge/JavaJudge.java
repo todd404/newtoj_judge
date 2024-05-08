@@ -5,7 +5,6 @@ import com.toddwu.toj_judge.exception.CompleteException;
 import com.toddwu.toj_judge.exception.RunningException;
 import com.toddwu.toj_judge.pojo.judge.JudgeReport;
 import lombok.SneakyThrows;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,21 +15,21 @@ import java.io.IOException;
 
 @Component
 @Scope("prototype")
-public class CppJudge extends Judge{
+public class JavaJudge extends Judge{
     File outputFile;
 
     @SneakyThrows
     @Override
     public void judgeCode() {
-        outputFile = new File(judgeConfig.getUuid() + "/out.out");
+        outputFile = new File(judgeConfig.getUuid() + "/out.jar");
 
         try {
             initFiles();
+
             complete();
             run();
         } catch (IOException e) {
             e.printStackTrace();
-            reportError(502, "内部错误");
         } catch (RunningException e) {
             reportError(500, e.getMessage());
         } catch (CompleteException e){
@@ -46,9 +45,8 @@ public class CppJudge extends Judge{
         judgeReport.setStatusCode(101);
         putJudgeReport(judgeReport);
 
-        ProcessBuilder processBuilder = new ProcessBuilder("clang++",
-                codeFile.getAbsolutePath(),
-                "-o", uuidDir.getPath() + "/" + "out.out");
+        ProcessBuilder processBuilder = new ProcessBuilder("javac",
+                codeFile.getAbsolutePath());
         Process process = processBuilder.start();
 
         Integer returnCode = process.waitFor();
@@ -68,14 +66,15 @@ public class CppJudge extends Judge{
         judgeReport.setStatusCode(102);
         putJudgeReport(judgeReport);
 
-        File executableFile = new File(judgeConfig.getUuid() + "/out.out");
+        File executableFile = new File(judgeConfig.getUuid() + "/Main.class");
 
         Boolean setExecutableResult = executableFile.setExecutable(true);
         ProcessBuilder processBuilder = new ProcessBuilder(
                 "/usr/bin/time",
                 "-f", "%e,%M",
-                executableFile
-                        .getAbsolutePath());
+                "java", "Main");
+        processBuilder.directory(uuidDir);
+
         run(processBuilder);
     }
 }

@@ -1,4 +1,6 @@
 spring:
+  main:
+    web-application-type: none
   application:
     name: toj_judge
   profiles:
@@ -15,6 +17,6 @@ spring:
     port: 5672
     username: guest
     password: guest
-
-server:
-  port: 9000
+    listener:
+      simple:
+        prefetch: 10
